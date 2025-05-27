@@ -1,0 +1,11 @@
+[package]
+name = "bot"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "main_app"
+path = "src/main.rs"
+
+[dependencies]
+monitor = { path = "../monitor"}
