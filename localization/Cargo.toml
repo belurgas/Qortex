@@ -1,0 +1,10 @@
+[package]
+name = "localization"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "localization"
+path = "src/lib.rs"
+
+[dependencies]
