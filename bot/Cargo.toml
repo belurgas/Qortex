@@ -9,6 +9,8 @@ path = "src/main.rs"
 
 [dependencies]
 monitor = { path = "../monitor"}
+logging = { path = "../logging" }
+
 teloxide = { version = "0.15.0", features = ["macros", "throttle"] }
 tokio = {version = "1", features = ["full"]}
 tracing = "0.1.41"

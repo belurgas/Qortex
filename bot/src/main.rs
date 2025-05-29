@@ -1,3 +1,4 @@
+use logging::{log_info, logger::setup_logger};
 use monitor::{print_all, say_hello};
 use dotenvy::dotenv;
 use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, dptree::case, prelude::*, utils::command::BotCommands};
@@ -30,7 +31,7 @@ async fn answer(bot: MyBot, msg: Message, cmd: Command, fsm: MyDialogue) -> Hand
     match cmd {
         Command::Help => bot.send_message(msg.chat.id, Command::descriptions().to_string()).await?,
         Command::Start => {
-            println!("Состояние: {:?}", fsm.get().await.unwrap());
+            log_info!("Состояние: {:?}", fsm.get().await.unwrap());
             bot.send_message(msg.chat.id, format!("Запустили")).await?
         }
         Command::SendMessage(message) => {
@@ -51,7 +52,10 @@ async fn send(bot: MyBot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    setup_logger().expect("Не удалось настроить логгер");
     let token = env::var("TOKEN").expect("Ошибка при получение токена из .env");
+
+    log_info!("Бот запущен...");
 
     let bot = Bot::new(token).throttle(Limits::default());
 
