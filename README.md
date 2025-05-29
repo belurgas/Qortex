@@ -1,1 +1,3 @@
-# Попозже...
+# Qproject Bot
+
+Qortex Project Bot
