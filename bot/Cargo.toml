@@ -16,6 +16,7 @@ teloxide = { version = "0.15.0", features = ["macros", "throttle"] }
 tokio = {version = "1", features = ["full"]}
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
-tonic = "0.13.1"
+tonic = { version = "0.13.1", features = ["transport", "tls-native-roots"]}
 dotenvy = "0.15"
 chrono = {version = "0.4", features = ["serde"]}
+rustls = { version = "0.23.27", features = ["ring"] }
