@@ -1,7 +1,9 @@
+use grpc_service::{hello_world::greeter_server::GreeterServer, MyGreeter};
 use logging::{log_info, logger::setup_logger};
 use monitor::{print_all, say_hello};
 use dotenvy::dotenv;
 use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, dptree::case, prelude::*, utils::command::BotCommands};
+use tonic::transport::Server;
 use std::env;
 
 #[derive(Clone, Default, Debug)]
@@ -54,6 +56,17 @@ async fn main() {
     dotenv().ok();
     setup_logger().expect("Не удалось настроить логгер");
     let token = env::var("TOKEN").expect("Ошибка при получение токена из .env");
+
+    tokio::spawn(async move {
+        let addr = "[::1]:5051".parse().unwrap();
+        let greeter = MyGreeter::default();
+
+        log_info!("Запустили gRPC!");
+        Server::builder()
+            .add_service(GreeterServer::new(greeter))
+            .serve(addr)
+            .await.unwrap();
+    });
 
     log_info!("Бот запущен...");
 
