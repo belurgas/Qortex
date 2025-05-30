@@ -15,10 +15,11 @@ pub enum State {
     Send,
 }
 
+/// Commands for bot
 #[derive(BotCommands, Clone)]
 #[command(rename_rule = "snake_case", description = "These commands are supported:")]
 enum Command {
-    #[command(description = "display this text.")]
+    #[command(description = "Отображает этот текс")]
     Help,
     #[command(description = "Запускает бота")]
     Start,
@@ -26,11 +27,16 @@ enum Command {
     SendMessage(String),
 }
 
-
+/// MyDialogue type need for using FSM Context managment
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
+
+/// Simple Result<> type for functions
 type HandlerResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
+
+/// Using Trottle describer for rate limit setting
 type MyBot = Throttle<Bot>;
 
+/// Answering for commands requests
 async fn answer(bot: MyBot, msg: Message, cmd: Command, fsm: MyDialogue) -> HandlerResult {
     match cmd {
         Command::Help => bot.send_message(msg.chat.id, Command::descriptions().to_string()).await?,
@@ -55,10 +61,13 @@ async fn send(bot: MyBot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
 
 #[tokio::main]
 async fn main() {
+    // Donenv, logger, load
     dotenv().ok();
     setup_logger().expect("Не удалось настроить логгер");
+
     let token = env::var("TOKEN").expect("Ошибка при получение токена из .env");
 
+    // Function thats start another thread for gRPC crate
     tokio::spawn(async move {
         rustls::crypto::ring::default_provider().install_default().unwrap();
         let addr = "127.0.0.1:5051".parse().unwrap();
@@ -77,7 +86,7 @@ async fn main() {
         let tls = ServerTlsConfig::new()
             .identity(identity)
             .client_ca_root(ca_cert)
-            .client_auth_optional(true);
+            .client_auth_optional(true); // Ultimate method for tls. If you use CA cert, this method need at
 
         log_info!("Запустили gRPC!");
         Server::builder()
@@ -89,8 +98,10 @@ async fn main() {
 
     log_info!("Бот запущен...");
 
+    // Bot init
     let bot = Bot::new(token).throttle(Limits::default());
 
+    // Dptree handler
     let handler = dptree::entry()
         .branch(
             Update::filter_message()
@@ -103,7 +114,8 @@ async fn main() {
                 .enter_dialogue::<Message, InMemStorage<State>, State>()
                 .endpoint(answer)
         );
-
+    
+    // Dispatch builder and starter
     Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![InMemStorage::<State>::new()])
         .enable_ctrlc_handler()
