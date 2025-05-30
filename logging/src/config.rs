@@ -2,6 +2,7 @@ use std::env;
 
 use serde::{Deserialize, Serialize};
 
+/// Logger configuration with .env parse
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogConfig {
     pub level: String,
@@ -12,6 +13,7 @@ pub struct LogConfig {
     pub enable_sentry: bool,
 }
 
+/// LogConfig Default implimentation using env vars
 impl Default for LogConfig {
     fn default() -> Self {
         Self {

@@ -5,13 +5,16 @@ use tracing_subscriber::{
 use once_cell::sync::OnceCell;
 use crate::config::LogConfig;
 
+/// one_cell const for init cheking of logger
 static LOGGER_INITIALIZED: OnceCell<()> = OnceCell::new();
 
+/// setup looger function
 pub fn setup_logger() -> anyhow::Result<()> {
     if LOGGER_INITIALIZED.get().is_some() {
         return Ok(());
     }
 
+    // default logger config
     let config = LogConfig::default();
 
     let console_layer = fmt::layer()
@@ -22,17 +25,18 @@ pub fn setup_logger() -> anyhow::Result<()> {
         .boxed();
 
 
-    // Фильтр по уровням
+    // Layers filter
     let filter_layer = EnvFilter::try_new(&config.level)?;
 
-    // Инициализация
+    // Initialize
     let subscriber = Registry::default()
         .with(filter_layer)
         .with(console_layer);
 
     subscriber.init();
 
-    LOGGER_INITIALIZED.set(()).expect("Ошибка инициализации логгера");
+    // Set Logger const
+    LOGGER_INITIALIZED.set(()).expect("Init error of logger");
     
     Ok(())
 }
