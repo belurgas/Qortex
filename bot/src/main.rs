@@ -61,7 +61,7 @@ async fn main() {
 
     tokio::spawn(async move {
         rustls::crypto::ring::default_provider().install_default().unwrap();
-        let addr = "[::1]:5051".parse().unwrap();
+        let addr = "127.0.0.1:5051".parse().unwrap();
         let greeter = MyGreeter::default();
 
         let (server_cert, server_key, ca_cert) = load_certs().await;
@@ -76,7 +76,8 @@ async fn main() {
 
         let tls = ServerTlsConfig::new()
             .identity(identity)
-            .client_ca_root(ca_cert);
+            .client_ca_root(ca_cert)
+            .client_auth_optional(true);
 
         log_info!("Запустили gRPC!");
         Server::builder()
@@ -130,7 +131,7 @@ async fn load_certs() -> (Vec<u8>, Vec<u8>, Vec<u8>) {
 
     let server_crt = certs_dir.join("server.crt");
     let server_key = certs_dir.join("server.key");
-    let ca_cert = certs_dir.join("ca.crt");
+    let ca_cert = certs_dir.join("ca.cert");
 
     for path in &[&server_crt, &server_key, &ca_cert] {
         if path.exists() {
