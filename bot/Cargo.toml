@@ -20,3 +20,6 @@ tonic = { version = "0.13.1", features = ["transport", "tls-native-roots"]}
 dotenvy = "0.15"
 chrono = {version = "0.4", features = ["serde"]}
 rustls = { version = "0.23.27", features = ["ring"] }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
