@@ -2,11 +2,15 @@ use grpc_service::{start_grpc, MyPromptService};
 use logging::{log_info, logger::setup_logger};
 use monitor::{print_all, say_hello};
 use dotenvy::dotenv;
-use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, dptree::case, prelude::*, utils::command::BotCommands};
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, dptree::case, prelude::*, types::ParseMode, utils::{command::BotCommands, markdown::escape}};
 use tokio::fs;
 use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
 use std::{env, path::{Path, PathBuf}, sync::Arc};
 use rustls::crypto::CryptoProvider;
+
+mod mistral;
 
 
 #[derive(Clone, Default, Debug)]
@@ -60,6 +64,39 @@ async fn send(bot: MyBot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     Ok(())
 }
 
+async fn handle_ai_message(bot: MyBot, msg: Message) -> HandlerResult {
+    if let Some(text) = msg.text() {
+        bot.send_message(msg.chat.id, "Думаю над ответом...").await?;
+
+        match mistral::query_mistral_api(text).await {
+            Ok(response) => {
+                // Попытка отправить как MarkdownV2
+                bot
+                    .send_message(msg.chat.id, escape(&response))
+                    .parse_mode(ParseMode::MarkdownV2)
+                    .await.unwrap();
+
+                // if let Err(e) = send_result {
+                //     if e.to_string().contains("can't parse entities") {
+                //         // Если ошибка разбора Markdown — экранируем и пробуем снова
+                //         let safe_text = escape(&response);
+                //         bot.send_message(msg.chat.id, safe_text)
+                //             .parse_mode(ParseMode::MarkdownV2)
+                //             .await?;
+                //     } else {
+                //         return Err(e.into());
+                //     }
+                // }
+            }
+            Err(e) => {
+                bot.send_message(msg.chat.id, format!("Ошибка: {}", e)).await?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     // Donenv, logger, load
@@ -67,10 +104,11 @@ async fn main() {
     setup_logger().expect("Не удалось настроить логгер");
 
     let token = env::var("TOKEN").expect("Ошибка при получение токена из .env");
-
-    tokio::spawn(async move {
-        let _ = start_grpc().await;
-    });
+    
+    // временно отключено... ⚠️⚠️⚠️
+    // tokio::spawn(async move {
+    //     let _ = start_grpc().await;
+    // });
 
     log_info!("Бот запущен...");
 
@@ -89,6 +127,11 @@ async fn main() {
                 .filter_command::<Command>()
                 .enter_dialogue::<Message, InMemStorage<State>, State>()
                 .endpoint(answer)
+        )
+        .branch(
+            Update::filter_message()
+                .filter(|msg: Message| msg.text().is_some())
+                .endpoint(handle_ai_message),
         );
     
     // Dispatch builder and starter
