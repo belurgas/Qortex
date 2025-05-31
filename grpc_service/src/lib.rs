@@ -5,9 +5,11 @@ mod proto {
 use proto::prompt_service_server::{PromptService, PromptServiceServer};
 use proto::{PromptRequest, PromptResponse};
 use tokio::fs;
+use tokio::time::sleep;
 use tonic::transport::{Certificate, Server, ServerTlsConfig};
 use tonic::{Request, Response, Status};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio_stream::Stream;
 use tokio_stream::wrappers::ReceiverStream;
@@ -119,6 +121,9 @@ pub async fn start_grpc() -> Result<(), Box<dyn std::error::Error>> {
             .serve(addr)
             .await.unwrap();
     });
+
+    sleep(Duration::from_secs(5)).await;
+    service.send_prompt("Ты поэт".to_string(), "Напиши стих!".to_string());
 
     Ok(())
 }
