@@ -128,7 +128,7 @@ async fn main() {
 async fn get_certs_path() -> PathBuf {
     let mut path = std::env::current_dir().expect("Не могу получить текущий каталог");
     println!("{:?}", path.to_string_lossy());
-    return path.join("certs");
+    return path.parent().unwrap().join("tls");
 }
 
 async fn load_certs() -> (Vec<u8>, Vec<u8>, Vec<u8>) {
@@ -141,9 +141,9 @@ async fn load_certs() -> (Vec<u8>, Vec<u8>, Vec<u8>) {
         panic!("Директория {} не существует!", certs_dir.display());
     }
 
-    let server_crt = certs_dir.join("server.crt");
-    let server_key = certs_dir.join("server.key");
-    let ca_cert = certs_dir.join("ca.cert");
+    let server_crt = certs_dir.join("server/server.crt");
+    let server_key = certs_dir.join("server/server.key");
+    let ca_cert = certs_dir.join("ca/ca.crt");
 
     for path in &[&server_crt, &server_key, &ca_cert] {
         if path.exists() {
