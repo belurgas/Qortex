@@ -864,6 +864,7 @@ version = "0.1.0"
 dependencies = [
  "futures",
  "prost",
+ "rustls 0.23.27",
  "tokio",
  "tokio-stream",
  "tonic",
