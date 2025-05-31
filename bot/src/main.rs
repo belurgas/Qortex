@@ -1,12 +1,13 @@
-use grpc_service::{hello_world::greeter_server::GreeterServer, MyGreeter};
+use grpc_service::{start_grpc, MyPromptService};
 use logging::{log_info, logger::setup_logger};
 use monitor::{print_all, say_hello};
 use dotenvy::dotenv;
 use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, dptree::case, prelude::*, utils::command::BotCommands};
 use tokio::fs;
 use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
-use std::{env, path::{Path, PathBuf}};
+use std::{env, path::{Path, PathBuf}, sync::Arc};
 use rustls::crypto::CryptoProvider;
+
 
 #[derive(Clone, Default, Debug)]
 pub enum State {
@@ -67,33 +68,8 @@ async fn main() {
 
     let token = env::var("TOKEN").expect("Ошибка при получение токена из .env");
 
-    // Function thats start another thread for gRPC crate
     tokio::spawn(async move {
-        rustls::crypto::ring::default_provider().install_default().unwrap();
-        let addr = "127.0.0.1:5051".parse().unwrap();
-        let greeter = MyGreeter::default();
-
-        let (server_cert, server_key, ca_cert) = load_certs().await;
-
-        let identity = Identity::from_pem(
-            &server_cert,
-            &server_key,
-        );
-
-        // Load root CA for clients checking
-        let ca_cert = Certificate::from_pem(ca_cert);
-
-        let tls = ServerTlsConfig::new()
-            .identity(identity)
-            .client_ca_root(ca_cert)
-            .client_auth_optional(true); // Ultimate method for tls. If you use CA cert, this method need at
-
-        log_info!("Запустили gRPC!");
-        Server::builder()
-            .tls_config(tls).unwrap()
-            .add_service(GreeterServer::new(greeter))
-            .serve(addr)
-            .await.unwrap();
+        let _ = start_grpc().await;
     });
 
     log_info!("Бот запущен...");
@@ -122,54 +98,4 @@ async fn main() {
         .build()
         .dispatch()
         .await;
-}
-
-// Получаем путь к папке certs в корне проекта
-async fn get_certs_path() -> PathBuf {
-    let mut path = std::env::current_dir().expect("Не могу получить текущий каталог");
-    println!("{:?}", path.to_string_lossy());
-    return path.parent().unwrap().join("tls");
-}
-
-async fn load_certs() -> (Vec<u8>, Vec<u8>, Vec<u8>) {
-    let certs_dir = get_certs_path().await;
-
-    // Диагностические выводы
-    println!("Директория certs: {}", certs_dir.display());
-
-    if !certs_dir.exists() {
-        panic!("Директория {} не существует!", certs_dir.display());
-    }
-
-    let server_crt = certs_dir.join("server/server.crt");
-    let server_key = certs_dir.join("server/server.key");
-    let ca_cert = certs_dir.join("ca/ca.crt");
-
-    for path in &[&server_crt, &server_key, &ca_cert] {
-        if path.exists() {
-            println!("✅ Файл {} найден", path.display());
-        } else {
-            println!("❌ Файл {} НЕ найден", path.display());
-        }
-    }
-
-    // Проверяем наличие всех файлов перед чтением
-    if !server_crt.exists() {
-        panic!("Файл {} не найден", server_crt.display());
-    }
-    if !server_key.exists() {
-        panic!("Файл {} не найден", server_key.display());
-    }
-    if !ca_cert.exists() {
-        panic!("Файл {} не найден", ca_cert.display());
-    }
-
-    // Теперь читаем
-    let server_cert = fs::read(&server_crt).await.expect("Не могу прочитать server.crt");
-    let server_key = fs::read(&server_key).await.expect("Не могу прочитать server.key");
-    let ca_cert = fs::read(&ca_cert).await.expect("Не могу прочитать ca.cert");
-
-    println!("Все файлы успешно загружены!");
-
-    (server_cert, server_key, ca_cert)
 }
