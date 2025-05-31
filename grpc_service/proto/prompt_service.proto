@@ -1,0 +1,19 @@
+syntax = "proto3";
+package prompt_service;
+
+// Сообщение, отправляемое сервером клиенту
+message PromptRequest {
+  string system_prompt = 1; // Системный промпт (например: "Ты поэт")
+  string user_prompt = 2;   // Пользовательский промпт (например: "Напиши стих")
+}
+
+// Сообщение, возвращаемое клиентом серверу
+message PromptResponse {
+  string response_text = 1; // Ответ клиента (например: "Жили-были...")
+}
+
+// Сервис для двунаправленного взаимодействия
+service PromptService {
+  // Двунаправленный поток: сервер отправляет запросы, клиент возвращает ответы
+  rpc HandlePrompts(stream PromptResponse) returns (stream PromptRequest);
+}
