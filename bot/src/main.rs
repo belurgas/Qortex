@@ -1,16 +1,11 @@
-use grpc_service::{client::spawn_client_request_with_callback, start_grpc, MyPromptService};
-use logging::{log_error, log_info, logger::setup_logger};
-use monitor::{print_all, say_hello};
+use grpc_service::{client::spawn_client_request_with_callback};
+use logging::{log_info, logger::setup_logger};
+// use monitor::{print_all, say_hello};
 use dotenvy::dotenv;
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, dptree::case, prelude::*, types::ParseMode, utils::{command::BotCommands, markdown::escape}};
-use tokio::{fs, sync::oneshot};
-use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
-use std::{env, path::{Path, PathBuf}, sync::Arc};
-use rustls::crypto::CryptoProvider;
-
-mod mistral;
+use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, prelude::*, utils::{command::BotCommands}};
+use tokio::sync::oneshot;
+// use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
+use std::env;
 
 
 #[derive(Clone, Default, Debug)]
@@ -58,7 +53,7 @@ async fn answer(bot: MyBot, msg: Message, cmd: Command, fsm: MyDialogue) -> Hand
     Ok(())
 }
 
-async fn send(bot: MyBot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
+async fn send(bot: MyBot, _dialogue: MyDialogue, msg: Message) -> HandlerResult {
     bot.send_message(msg.chat.id, "Let's start! Send piska?").await?;
     // dialogue.update(State::ReceiveFullName).await?;
     Ok(())
