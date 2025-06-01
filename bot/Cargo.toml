@@ -11,6 +11,7 @@ path = "src/main.rs"
 monitor = { path = "../monitor"}
 logging = { path = "../logging" }
 grpc_service = { path = "../grpc_service" }
+db = { path = "../db"}
 
 teloxide = { version = "0.15.0", features = ["macros", "throttle"] }
 tokio = {version = "1", features = ["full"]}

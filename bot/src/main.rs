@@ -91,6 +91,8 @@ async fn main() {
     //     let _ = start_grpc().await;
     // });
 
+    db::db_test().await.unwrap();
+
     log_info!("Бот запущен...");
 
     // Bot init
