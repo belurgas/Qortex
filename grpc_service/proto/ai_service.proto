@@ -1,0 +1,39 @@
+syntax = "proto3";
+package ai_service;
+
+// Сообщение для генерации текста ИИ
+message TextGenerationRequest {
+  string system_prompt = 1;  // role: system
+  string user_prompt = 2;    // role: user
+  float temperature = 3;     // температура генерации
+  float top_p = 4;           // top_p
+}
+
+// Ответ на верхнее
+message TextGenerationResponse {
+  string generated_text = 1;
+}
+
+// Сообщение для получения данных из БД
+message GetAllUsersRequest {}
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+// Ответ
+message GetAllUsersResponse {
+  repeated User users = 1;
+}
+
+// Сервис, предоставляемый Python-сервером
+// Вызывается Rust-клиентом для генерации текста
+service AiGenerationService {
+  rpc GenerateText(TextGenerationRequest) returns (TextGenerationResponse);
+}
+
+// Сервис, предоставляемый Rust-сервером
+// Вызывается Python-клиентом для получения пользователей
+service UserService {
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+}
