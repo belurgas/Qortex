@@ -8,10 +8,8 @@ mod certs;
 
 
 use certs::load_certs;
-use logging::logger::setup_logger;
 use proto::prompt_service_server::{PromptService, PromptServiceServer};
 use proto::{PromptRequest, PromptResponse};
-use tokio::fs;
 use tokio::time::sleep;
 use tonic::transport::{Certificate, Server, ServerTlsConfig};
 use tonic::{Request, Response, Status};
@@ -23,7 +21,6 @@ use tokio_stream::wrappers::ReceiverStream;
 use futures::StreamExt;
 use std::pin::Pin;
 use tonic::transport::Identity;
-use std::path::PathBuf;
 use logging::{log_debug, log_error, log_info};
 
 

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use logging::{log_debug, log_info, logger::setup_logger};
+use logging::{log_debug, log_info};
 use tokio::fs;
 
 // Получаем путь к папке certs в корне проекта

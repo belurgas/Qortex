@@ -1,5 +1,5 @@
 use proto::{user_service_server::UserService, GetAllUsersRequest, GetAllUsersResponse, User};
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::{Request, Response, Status};
 
 pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/ai_service.rs"));
