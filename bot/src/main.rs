@@ -1,3 +1,4 @@
+use db::DatabaseService;
 use grpc_service::{client::spawn_client_request_with_callback};
 use logging::{log_info, logger::setup_logger};
 // use monitor::{print_all, say_hello};
@@ -5,7 +6,7 @@ use dotenvy::dotenv;
 use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, prelude::*, utils::{command::BotCommands}};
 use tokio::sync::oneshot;
 // use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
-use std::env;
+use std::{env, sync::Arc};
 
 
 #[derive(Clone, Default, Debug)]
@@ -62,6 +63,35 @@ async fn send(bot: MyBot, _dialogue: MyDialogue, msg: Message) -> HandlerResult 
 async fn handle_ai_message(bot: MyBot, msg: Message) -> HandlerResult {
     if let Some(text) = msg.text() {
         bot.send_message(msg.chat.id, "Думаю над ответом...").await?;
+        
+        // let telegram_id = msg.chat.id.0;
+        // let username = msg.from.clone().unwrap().username;
+
+//         let system_prompt = r#"
+// Ты — ассистент, который отвечает строго в plain-тексте. Соблюдай правила:
+// 1. **Запрещено любое форматирование**:
+//    - Никаких Markdown, HTML, LaTeX.
+//    - Никаких ```code blocks```, `inline_code`, > цитат.
+//    - Никаких *курсива*, **жирного**, ~зачёркивания~.
+//    - Никаких таблиц, списков с пунктами (1., - [x] и т.д.).
+// 2. **Разрешено только**:
+//    - Пустые строки для разделения логических блоков.
+//    - Эмодзи (например, ✅, 🔥, ❗) для акцента.
+// 3. **Если просят оформить текст**:
+//    - Вежливо откажи: "Извините, я работаю только с plain-текстом".
+// 4. Если пользователь просит написать, сгенерировать, обхяснить как что-то написать на каком-то языке, то вежливо откажи.
+// 5. **Пример корректного ответа**:
+//    "Сегодня солнечно ☀️  
+   
+//    Рекомендую прогулку в парк.  
+//    Не забудьте воду 💧
+            
+//         "#;
+
+//         db_service.check_or_register_user(telegram_id, username).await?;
+
+//         db_service.add_message_to_history(telegram_id, "system", system_prompt, true).await?;
+//         db_service.add_message_to_history(telegram_id, "user", msg.text().unwrap(), false).await?;
         let (tx, rx) = oneshot::channel();
         spawn_client_request_with_callback(tx, text.to_string());
 
@@ -91,7 +121,10 @@ async fn main() {
     //     let _ = start_grpc().await;
     // });
 
-    db::db_test().await.unwrap();
+    let uri = env::var("MONGODB_URI").unwrap();
+
+    // let db_service = Arc::new(DatabaseService::new(&uri, "ai_bot").await.unwrap());
+
 
     log_info!("Бот запущен...");
 
@@ -114,12 +147,14 @@ async fn main() {
         .branch(
             Update::filter_message()
                 .filter(|msg: Message| msg.text().is_some())
-                .endpoint(handle_ai_message),
+                .endpoint(handle_ai_message)
         );
     
     // Dispatch builder and starter
     Dispatcher::builder(bot, handler)
-        .dependencies(dptree::deps![InMemStorage::<State>::new()])
+        .dependencies(dptree::deps![
+            InMemStorage::<State>::new()
+        ])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
