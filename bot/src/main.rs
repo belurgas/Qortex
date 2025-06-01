@@ -4,7 +4,7 @@ use logging::{log_info, logger::setup_logger};
 // use monitor::{print_all, say_hello};
 use dotenvy::dotenv;
 use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, prelude::*, utils::{command::BotCommands}};
-use tokio::sync::oneshot;
+use tokio::{sync::oneshot, time::Instant};
 // use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
 use std::{env, sync::Arc};
 
@@ -93,6 +93,7 @@ async fn handle_ai_message(bot: MyBot, msg: Message) -> HandlerResult {
 //         db_service.add_message_to_history(telegram_id, "system", system_prompt, true).await?;
 //         db_service.add_message_to_history(telegram_id, "user", msg.text().unwrap(), false).await?;
         let (tx, rx) = oneshot::channel();
+        log_info!("Старт запроса");
         spawn_client_request_with_callback(tx, text.to_string());
 
         let bot_clone = bot.clone();
