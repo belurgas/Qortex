@@ -18,3 +18,12 @@ pub async fn db_test() -> mongodb::error::Result<()> {
     Ok(())
 }
 
+// 3 collections
+
+// UserHistory
+// Users
+// Answers
+
+// Users add, role change, data change
+// Answers add, change status, clear (with archiving)
+// UserHistory, add, clear, limit clearing
