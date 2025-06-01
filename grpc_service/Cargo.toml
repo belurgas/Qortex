@@ -15,6 +15,7 @@ tokio-stream = "0.1"
 tonic = "0.13.1"
 futures = "0.3"
 rustls = { version = "0.23.27", features = ["ring"] }
+logging = { path = "../logging" }
 
 [build-dependencies]
 tonic-build = "*"
