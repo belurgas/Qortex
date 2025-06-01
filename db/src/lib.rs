@@ -5,6 +5,8 @@ use chrono::{DateTime, Utc};
 use mongodb::{bson::{doc, Document, to_bson}, options::ClientOptions, Client, Collection, Database};
 use serde::{Deserialize, Serialize};
 
+pub mod collections;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct User {
     pub telegram_id: i64,
