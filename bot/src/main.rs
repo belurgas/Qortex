@@ -1,11 +1,11 @@
-use grpc_service::{start_grpc, MyPromptService};
-use logging::{log_info, logger::setup_logger};
+use grpc_service::{client::spawn_client_request_with_callback, start_grpc, MyPromptService};
+use logging::{log_error, log_info, logger::setup_logger};
 use monitor::{print_all, say_hello};
 use dotenvy::dotenv;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, dptree::case, prelude::*, types::ParseMode, utils::{command::BotCommands, markdown::escape}};
-use tokio::fs;
+use tokio::{fs, sync::oneshot};
 use tonic::transport::{Certificate, Identity, Server, ServerTlsConfig};
 use std::{env, path::{Path, PathBuf}, sync::Arc};
 use rustls::crypto::CryptoProvider;
@@ -67,31 +67,17 @@ async fn send(bot: MyBot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
 async fn handle_ai_message(bot: MyBot, msg: Message) -> HandlerResult {
     if let Some(text) = msg.text() {
         bot.send_message(msg.chat.id, "Думаю над ответом...").await?;
+        let (tx, rx) = oneshot::channel();
+        spawn_client_request_with_callback(tx, text.to_string());
 
-        match mistral::query_mistral_api(text).await {
-            Ok(response) => {
-                // Попытка отправить как MarkdownV2
-                bot
-                    .send_message(msg.chat.id, escape(&response))
-                    .parse_mode(ParseMode::MarkdownV2)
-                    .await.unwrap();
-
-                // if let Err(e) = send_result {
-                //     if e.to_string().contains("can't parse entities") {
-                //         // Если ошибка разбора Markdown — экранируем и пробуем снова
-                //         let safe_text = escape(&response);
-                //         bot.send_message(msg.chat.id, safe_text)
-                //             .parse_mode(ParseMode::MarkdownV2)
-                //             .await?;
-                //     } else {
-                //         return Err(e.into());
-                //     }
-                // }
+        let bot_clone = bot.clone();
+        tokio::spawn(async move {
+            match rx.await {
+                Ok(Ok(text)) => bot_clone.send_message(msg.chat.id, text).await.unwrap(),
+                Ok(Err(e)) => bot_clone.send_message(msg.chat.id, e).await.unwrap(),
+                Err(_) => bot_clone.send_message(msg.chat.id, "Ошибка связи с сервером").await.unwrap(),
             }
-            Err(e) => {
-                bot.send_message(msg.chat.id, format!("Ошибка: {}", e)).await?;
-            }
-        }
+        });
     }
 
     Ok(())
