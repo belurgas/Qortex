@@ -1,6 +1,49 @@
 use std::env;
 
+use chrono::{DateTime, Utc};
 use mongodb::{bson::{doc, Document}, Client, Collection};
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct User {
+    pub telegram_id: i64,
+    pub username: Option<String>,
+    pub role: UserRole,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum UserRole {
+    DEFAULT,
+    MODER,
+    ADMIN,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct HistoryMessage {
+    pub role: String,
+    pub content: String,
+    pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct UserHistory {
+    pub telegra_id: i64,
+    pub text: String,
+    pub status: AnswerStatus,
+    pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum AnswerStatus {
+    ACCEPTED,
+    REVIEWED,
+}
+
+struct DatabasePool {
+    client: Client,
+    db_name: String,
+}
 
 pub async fn db_test() -> mongodb::error::Result<()> {
     let uri = env::var("MONGODB_URI").expect("Incorrect database_string");
