@@ -8,7 +8,6 @@ name = "main_app"
 path = "src/main.rs"
 
 [dependencies]
-monitor = { path = "../monitor"}
 logging = { path = "../logging" }
 grpc_service = { path = "../grpc_service" }
 db = { path = "../db"}

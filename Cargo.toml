@@ -1,2 +1,2 @@
 [workspace]
-members = ["bot", "logging", "monitor", "localization", "db", "grpc_service"]
+members = ["bot", "logging", "localization", "db", "grpc_service"]

@@ -263,7 +263,6 @@ dependencies = [
  "dotenvy",
  "grpc_service",
  "logging",
- "monitor",
  "reqwest",
  "rustls 0.23.27",
  "serde",
@@ -1653,10 +1652,6 @@ dependencies = [
  "quote",
  "syn 2.0.101",
 ]
-
-[[package]]
-name = "monitor"
-version = "0.1.0"
 
 [[package]]
 name = "multimap"
