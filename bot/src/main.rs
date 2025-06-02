@@ -1,12 +1,10 @@
 use db::Database;
-use grpc_service::{client::spawn_client_request_with_callback};
 use handlers::{commands::{command_handler, Commander}, messages};
 use logging::{log_info, logger::setup_logger};
 use dotenvy::dotenv;
 use state::State;
-use teloxide::{adaptors::{throttle::Limits, Throttle}, dispatching::dialogue::InMemStorage, prelude::*, utils::{command::BotCommands}};
-use tokio::sync::oneshot;
-use types::{HandlerResult, MyBot, MyDialogue};
+use teloxide::{adaptors::{throttle::Limits}, dispatching::dialogue::InMemStorage, prelude::*};
+use types::MyBot;
 use std::{env, sync::Arc};
 
 mod keyboards;
