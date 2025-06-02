@@ -21,7 +21,7 @@ pub struct UserHistory {
 
 impl UserHistory {
     // Create new user history collection
-    pub fn new(
+    pub fn new_system(
         telegram_id: i64,
         system_prompt: String,
     ) -> Self {
@@ -31,6 +31,22 @@ impl UserHistory {
             messages: vec![HistoryMessage {
                 role: "system".to_string(),
                 content: system_prompt,
+                timestamp: DateTime::now(),
+            }]
+        }
+    }
+
+    // New Simple Prompt
+    pub fn new_default(
+        telegram_id: i64,
+        prompt: String,
+    ) -> Self {
+        Self {
+            id: Bson::ObjectId(ObjectId::new()),
+            telegram_id,
+            messages: vec![HistoryMessage {
+                role: "user".to_string(),
+                content: prompt,
                 timestamp: DateTime::now(),
             }]
         }
