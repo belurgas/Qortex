@@ -1,6 +1,6 @@
 use std::fmt;
 
-use mongodb::bson::{self, oid::ObjectId, Bson, DateTime};
+use mongodb::bson::{oid::ObjectId, Bson, DateTime};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy)]
