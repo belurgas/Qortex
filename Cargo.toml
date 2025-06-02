@@ -1,2 +1,3 @@
 [workspace]
 members = ["bot", "logging", "localization", "db", "grpc_service", "qortex"]
+resolver = "3"
