@@ -59,8 +59,7 @@ impl TelegramBot {
     }
 }
 
-#[tokio::main]
-async fn main() {
+pub async fn start() {
     // Donenv, logger, load
     dotenv().ok();
     setup_logger().expect("Не удалось настроить логгер");

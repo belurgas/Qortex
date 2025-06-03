@@ -1990,6 +1990,10 @@ dependencies = [
 [[package]]
 name = "qortex"
 version = "0.1.0"
+dependencies = [
+ "bot",
+ "tokio",
+]
 
 [[package]]
 name = "quote"
