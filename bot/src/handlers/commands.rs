@@ -28,7 +28,7 @@ pub async fn command_handler(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg: 
                 StatusCode::Exist => {
                     log_info!("Уже зареган");
                 }
-                StatusCode::UserId(id) => {
+                StatusCode::UserId(_id) => {
                     log_info!("Пользователь {} добавленв бд", msg.chat.id.0);
                     return Ok(());
                 }
