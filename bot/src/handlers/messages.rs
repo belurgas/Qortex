@@ -9,7 +9,7 @@ use crate::{types::{HandlerResult, MyDialogue}, TelegramBot};
 
 
 
-pub async fn default_messages(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg: Message) -> HandlerResult {
+pub async fn default_messages(bots: Arc<TelegramBot>, _dialogue: MyDialogue, msg: Message) -> HandlerResult {
     let bot = &bots.bot;
     if let Some(text) = msg.text() {
         bot.send_message(msg.chat.id, "Думаю над ответом...").await?;
