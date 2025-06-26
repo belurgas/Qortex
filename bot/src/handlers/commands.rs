@@ -1,10 +1,10 @@
 use std::sync::Arc;
+use db_pg::User;
+use logging::{log_error, log_info};
+use teloxide::{payloads::SendMessageSetters, prelude::Requester, types::Message, utils::command::BotCommands};
+use uuid::Uuid;
 
-use db::{collections::user::User, StatusCode};
-use logging::log_info;
-use teloxide::{prelude::Requester, types::Message, utils::command::BotCommands};
-
-use crate::{types::{HandlerResult, MyDialogue}, TelegramBot};
+use crate::{keyboards::faqkb::test, types::{HandlerResult, MyDialogue}, TelegramBot};
 
 /// Commands for bot
 #[derive(BotCommands, Clone)]
@@ -16,6 +16,7 @@ pub enum Commander {
     Start,
     #[command(description = "Отправляет сообщение админу",)]
     SendMessage(String),
+    Faq,
 }
 
 pub async fn command_handler(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg: Message, cmd: Commander) -> HandlerResult {
@@ -23,18 +24,17 @@ pub async fn command_handler(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg: 
     match cmd {
         Commander::Help => bot.send_message(msg.chat.id, Commander::descriptions().to_string()).await?,
         Commander::Start => {
-            let new_user = User::new(msg.chat.id.0, msg.from.unwrap().username.or(Some("none".to_string())), db::collections::user::Role::DEFAULT);
-            match bots.db.add_user(new_user).await? {
-                StatusCode::Exist => {
-                    log_info!("Уже зареган");
-                }
-                StatusCode::UserId(_id) => {
-                    log_info!("Пользователь {} добавленв бд", msg.chat.id.0);
-                    return Ok(());
-                }
-                _ => {}
+            let new_user = User {
+                telegram_id: msg.chat.id.0,
+                username: msg.from.unwrap().username,
+                uuid: Uuid::new_v4(),
+                role: db_pg::UserRole::Default,
+            };
+            if let Err(e) = bots.db.add_user(&new_user).await {
+                log_error!("Ошибка добавления пользователя в бд: {}", e);
+            } else {
+                log_info!("Пользователь {} в бд", msg.chat.id.0);
             }
-            log_info!("Состояние: {:?}", dialogue.get().await.unwrap());
             bot.send_message(msg.chat.id, format!("Запустили")).await?;
 
             return Ok(());
@@ -44,6 +44,12 @@ pub async fn command_handler(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg: 
                 .await?;
 
             return Ok(());
+        },
+        Commander::Faq => {
+            bot.send_message(msg.chat.id, "Фак ю битч")
+                .reply_markup(test())
+                .await?;
+            return Ok(())
         }
     };
 
