@@ -3,4 +3,5 @@ pub enum State {
     #[default]
     OnWaiting,
     Send,
+    WaitQuestion,
 }
