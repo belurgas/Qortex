@@ -10,7 +10,7 @@ path = "src/lib.rs"
 [dependencies]
 logging = { path = "../logging" }
 grpc_service = { path = "../grpc_service" }
-db = { path = "../db"}
+db_pg = { path = "../db_pg"}
 
 teloxide = { version = "0.15.0", features = ["macros", "throttle"] }
 tokio = {version = "1", features = ["full"]}
@@ -23,3 +23,5 @@ rustls = { version = "0.23.27", features = ["ring"] }
 reqwest = { version = "0.12", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+uuid = "1.17.0"
+async-trait = "0.1"
