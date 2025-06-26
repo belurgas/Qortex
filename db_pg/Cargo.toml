@@ -1,0 +1,13 @@
+[package]
+name = "db_pg"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "db_pg"
+path = "src/lib.rs"
+
+[dependencies]
+sqlx = { version = "0.8", features = [ "runtime-tokio", "uuid", "postgres", "derive", "chrono" ] }
+tokio = { version = "1.45.1", features = ["full"] }
+uuid = "1.17.0"
