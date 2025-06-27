@@ -17,7 +17,7 @@ pub async fn default_messages(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg:
             State::WaitQuestion => {
                 if let Some(question) = msg.text() {
                     log_info!("Пользователь {} обратился за помощью к Qortex AI с вопросом: {}", msg.chat.first_name().unwrap_or(msg.chat.id.0.to_string().as_str()), question);
-                    let message = bot.send_message(msg.chat.id, "*Qortex AI*\n_Думаю над ответом..._")
+                    let message = bot.send_message(msg.chat.id, "*Qortex AI*\n_Думаю над ответом\\.\\.\\._")
                         .parse_mode(ParseMode::MarkdownV2)
                         .await?;
 
