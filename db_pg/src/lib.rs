@@ -2,6 +2,7 @@ use std::error;
 use std::time::Duration;
 
 use sqlx::postgres::{PgPool, PgPoolOptions, PgRow};
+use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::{FromRow, Row};
 use uuid::Uuid;
 
@@ -13,6 +14,14 @@ pub enum UserRole {
     WithAccess,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, sqlx::Type)]
+#[sqlx(type_name = "message_status", rename_all = "lowercase")]
+pub enum MessageStatus {
+    Pending,    // Ожидает рассмотрения
+    Accepted,   // Принято в работу
+    Answered,   // Ответ дан
+}
+
 #[derive(Debug, FromRow)]
 pub struct User {
     pub telegram_id: i64,
@@ -21,9 +30,20 @@ pub struct User {
     pub role: UserRole,
 }
 
+#[derive(Debug, FromRow)]
+pub struct Message {
+    pub id: Uuid,
+    pub telegram_id: i64,
+    pub text: String,
+    pub status: MessageStatus,
+    pub answer: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Clone)]
 pub struct UserRepository {
-    pool: PgPool,
+    pub pool: PgPool,
 }
 
 type Result<T> = std::result::Result<T, Box<dyn error::Error + Send + Sync>>;
@@ -39,6 +59,7 @@ impl UserRepository {
         Ok(Self { pool })
     }
 
+
     pub async fn init_table(&self) -> Result<()> {
         sqlx::query(
             r#"
@@ -53,6 +74,38 @@ impl UserRepository {
         .execute(&self.pool)
         .await
         .expect("Failed to create users table");
+
+        sqlx::query(
+            r#"
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'message_status') THEN
+                    CREATE TYPE message_status AS ENUM ('pending', 'accepted', 'answered');
+                END IF;
+            END
+            $$;
+            "#
+        )
+        .execute(&self.pool)
+        .await
+    .expect("Failed to create message_status enum type");
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS messages (
+                id UUID PRIMARY KEY,
+                telegram_id BIGINT NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
+                text TEXT NOT NULL,
+                status message_status NOT NULL DEFAULT 'pending',
+                answer TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            "#,
+        )
+        .execute(&self.pool)
+        .await
+        .expect("Failed to create messages table");
 
         Ok(())
     }
@@ -123,6 +176,101 @@ impl UserRepository {
         .expect("Failed to get user");
         
         Ok(user)
+    }
+
+    pub async fn add_message(&self, telegram_id: i64, text: &str) -> Result<Uuid> {
+        let message_id = Uuid::new_v4();
+        
+        sqlx::query(
+            r#"
+            INSERT INTO messages (id, telegram_id, text)
+            VALUES ($1, $2, $3)
+            "#,
+        )
+        .bind(message_id)
+        .bind(telegram_id)
+        .bind(text)
+        .execute(&self.pool)
+        .await
+        .expect("Failed to insert message");
+
+        Ok(message_id)
+    }
+
+    pub async fn update_message_status(
+        &self,
+        message_id: Uuid,
+        new_status: MessageStatus,
+        answer: Option<&str>,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"
+            UPDATE messages
+            SET 
+                status = $1,
+                answer = $2,
+                updated_at = NOW()
+            WHERE id = $3
+            "#,
+        )
+        .bind(new_status)
+        .bind(answer)
+        .bind(message_id)
+        .execute(&self.pool)
+        .await
+        .expect("Failed to update message status");
+
+        Ok(())
+    }
+
+    pub async fn get_user_messages(&self, telegram_id: i64) -> Result<Vec<Message>> {
+        let messages = sqlx::query_as::<_, Message>(
+            r#"
+            SELECT id, telegram_id, text, status, answer, created_at, updated_at
+            FROM messages
+            WHERE telegram_id = $1
+            ORDER BY created_at DESC
+            "#,
+        )
+        .bind(telegram_id)
+        .fetch_all(&self.pool)
+        .await
+        .expect("Failed to fetch messages");
+
+        Ok(messages)
+    }
+
+    pub async fn get_message_by_id(&self, message_id: Uuid) -> Result<Option<Message>> {
+        let message = sqlx::query_as::<_, Message>(
+            r#"
+            SELECT id, telegram_id, text, status, answer, created_at, updated_at
+            FROM messages
+            WHERE id = $1
+            "#,
+        )
+        .bind(message_id)
+        .fetch_optional(&self.pool)
+        .await
+        .expect("Failed to fetch message by ID");
+
+        Ok(message)
+    }
+
+    pub async fn get_messages_by_status(&self, status: MessageStatus) -> Result<Vec<Message>> {
+        let messages = sqlx::query_as::<_, Message>(
+            r#"
+            SELECT id, telegram_id, text, status, answer, created_at, updated_at
+            FROM messages
+            WHERE status = $1
+            ORDER BY created_at ASC
+            "#,
+        )
+        .bind(status)
+        .fetch_all(&self.pool)
+        .await
+        .expect("Failed to fetch messages by status");
+
+        Ok(messages)
     }
 }
 
