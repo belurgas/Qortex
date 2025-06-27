@@ -1,11 +1,12 @@
 pub mod faq;
+pub mod requests;
 
 use std::{collections::HashMap, sync::Arc};
 
 use logging::log_info;
-use teloxide::{payloads::SendMessageSetters, prelude::Requester, types::{CallbackQuery, ParseMode}, utils::markdown::escape};
+use teloxide::{payloads::{SendMessageSetters, SendPhotoSetters}, prelude::Requester, types::{CallbackQuery, InputFile, ParseMode}, utils::markdown::escape};
 use async_trait::async_trait;
-use crate::{handlers::callback::faq::{FaqSend, Q1}, keyboards::faqkb::faq, state::State, types::{HandlerResult, MyDialogue}, TelegramBot};
+use crate::{handlers::callback::{faq::{FaqSend, Q1}, requests::{AllMessages, MyRequests}}, keyboards::{faqkb::faq, menu::menu}, state::State, types::{HandlerResult, MyDialogue}, TelegramBot};
 
 pub struct CallbackContext {
     pub bots: Arc<TelegramBot>,
@@ -20,6 +21,27 @@ pub trait CallbackHandler: Send + Sync {
 
 pub struct CallbackHandlerFactory {
     handlers: HashMap<String, Arc<dyn CallbackHandler + Send + Sync>>,
+}
+
+pub struct BackToMenu;
+
+#[async_trait]
+impl CallbackHandler for BackToMenu {
+    async fn handle(&self, ctx: &CallbackContext) -> HandlerResult {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/static/aw_logo.png");
+        let image = InputFile::file(path);
+        let text = format!(
+            "*{}* привет\nМы команда разработчиков *Axiowel*, занимаемся разработкой эффективного и отказоустойчевого программного обеспечения основоного на ИИ модели *Axiowel AI*\n\nНаш бот достататочно функционален, можете подробнее узнать в /faq",
+            escape(&ctx.query.from.first_name)
+        );
+        ctx.bots.bot.send_photo(ctx.query.from.id, image)
+            .caption(text)
+            .reply_markup(menu())
+            .parse_mode(ParseMode::MarkdownV2)
+            .await?;
+
+        Ok(())
+    }
 }
 
 impl CallbackHandlerFactory {
@@ -37,6 +59,18 @@ impl CallbackHandlerFactory {
         handlers.insert(
             "back_to_faq".to_string(),
             Arc::new(FaqSend) as Arc<dyn CallbackHandler + Send + Sync>
+        );
+        handlers.insert(
+            "all_requests".to_string(),
+            Arc::new(AllMessages) as Arc<dyn CallbackHandler + Send + Sync>
+        );
+        handlers.insert(
+            "my_requests".to_string(),
+            Arc::new(MyRequests) as Arc<dyn CallbackHandler + Send + Sync>
+        );
+        handlers.insert(
+            "back_to_menu".to_string(),
+            Arc::new(BackToMenu) as Arc<dyn CallbackHandler + Send + Sync>
         );
         // handlers.insert("back_to_faq".to_string(), Arc::new(BackToFaqHandler));
         // Добавляем другие обработчики
