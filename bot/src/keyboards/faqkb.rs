@@ -17,12 +17,6 @@ pub fn feedback_ai() -> InlineKeyboardMarkup {
     InlineKeyboardMarkup::default().append_row(vec![yes, no]).append_row(vec![back_to_faq])
 }
 
-pub fn test() -> InlineKeyboardMarkup {
-    let dd = InlineKeyboardButton::callback("XXX", "faq");
-
-    InlineKeyboardMarkup::default().append_row(vec![dd])
-}
-
 pub fn profits() -> InlineKeyboardMarkup {
     let back_to_faq = InlineKeyboardButton::callback("⬅️", "back_to_faq");
     // Ещё вопросы если надо
