@@ -1,4 +1,4 @@
-use std::error;
+use std::{error, fmt};
 use std::time::Duration;
 
 use sqlx::postgres::{PgPool, PgPoolOptions, PgRow};
@@ -20,6 +20,16 @@ pub enum MessageStatus {
     Pending,    // Ожидает рассмотрения
     Accepted,   // Принято в работу
     Answered,   // Ответ дан
+}
+
+impl fmt::Display for MessageStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Pending => write!(f, "Ожидает рассмотрения"),
+            Self::Accepted => write!(f, "Принято в работу"),
+            Self::Answered => write!(f, "Ответ дан"),
+        }
+    }
 }
 
 #[derive(Debug, FromRow)]
