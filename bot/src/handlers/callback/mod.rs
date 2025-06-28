@@ -98,6 +98,13 @@ pub async fn callback_handler(
     };
 
     if let Some(ref data) = ctx.query.data {
+        if data.starts_with("page_") {
+            if let Some(handler) = bots.callback_handlers.get_handler("all_requests") {
+                handler.handle(&ctx).await?;
+                return Ok(());
+            }
+        }
+
         match bots.callback_handlers.get_handler(&data) {
             Some(handler) => handler.handle(&ctx).await?,
             None => log_info!("Unknown callback from {} with data: {}", ctx.query.from.id.0, data),
