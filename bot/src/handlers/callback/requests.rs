@@ -1,13 +1,13 @@
 use async_trait::async_trait;
-use teloxide::{dispatching::dialogue, payloads::{EditMessageReplyMarkupSetters, SendMessageSetters}, prelude::Requester, types::{CallbackQuery, ParseMode}, utils::markdown::escape};
+use teloxide::{dispatching::dialogue, payloads::{EditMessageReplyMarkupSetters, EditMessageTextSetters, SendMessageSetters}, prelude::Requester, types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode}, utils::markdown::escape};
 use uuid::Uuid;
 
 use crate::{handlers::callback::{CallbackContext, CallbackHandler}, keyboards::{faqkb::{faq, profits}, requests::{all_messages, create_navigation_row, history, ITEMS_PER_PAGE}}, state::State, types::{HandlerResult, MyDialogue}, TelegramBot};
 
 pub struct MyRequests;
 pub struct AllMessages;
-pub struct MessageSelectionHandler;
-pub struct PageChangeHandler;
+pub struct MessageHandler;
+pub struct BackToPageHandler;
 
 #[async_trait]
 impl CallbackHandler for MyRequests {
@@ -73,6 +73,84 @@ impl CallbackHandler for AllMessages {
                 ctx.bots.bot.edit_message_reply_markup(msg.chat.id, message.id())
                     .reply_markup(keyboard)
                     .await?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl CallbackHandler for MessageHandler {
+    async fn handle(&self, ctx: &CallbackContext) -> HandlerResult {
+        let data = ctx.query.data.as_ref().unwrap();
+        
+        if let Some(message_id) = data.strip_prefix("msg_") {
+            let state = ctx.dialogue.get().await?.unwrap_or_default();
+
+            if let State::ViewingMessages { messages, current_page } = &state {
+                // Найдите сообщение по ID
+                if let Some(message) = messages.iter().find(|m| m.id.to_string() == message_id) {
+                    // Переключитесь в режим просмотра одного сообщения
+                    let new_state = State::ViewingSingleMessage {
+                        message: message.clone(),
+                        back_page: *current_page,
+                    };
+                    ctx.dialogue.update(new_state).await?;
+
+                    // Отправьте сообщение с кнопкой "Назад"
+                    let keyboard = InlineKeyboardMarkup::default()
+                        .append_row(vec![InlineKeyboardButton::callback(
+                            "⬅️ Назад",
+                            format!("back_to_page_{}", current_page),
+                        )]);
+
+                    if let Some(msg) = ctx.query.message.as_ref() {
+                        let msg = msg.regular_message().unwrap();
+                        ctx.bots.bot
+                            .edit_message_text(msg.chat.id, msg.id, format!("**Сообщение:**\n{}\n*UID:* `{}`\n*Время обращения:* {}\n*Статус:* {}", escape(&message.text), escape(&message.id.to_string()), escape(&message.created_at.to_string()), escape(&message.status.to_string())))
+                            .parse_mode(ParseMode::MarkdownV2)
+                            .reply_markup(keyboard)
+                            .await?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl CallbackHandler for BackToPageHandler {
+    async fn handle(&self, ctx: &CallbackContext) -> HandlerResult {
+        let data = ctx.query.data.as_ref().unwrap();
+        
+        if let Some(page_str) = data.strip_prefix("back_to_page_") {
+            let page = page_str.parse::<usize>().unwrap_or(0);
+            
+            let state = ctx.dialogue.get().await?.unwrap_or_default();
+
+            if let State::ViewingSingleMessage { message, back_page } = &state {
+                // Вернитесь к списку сообщений
+                let user_id: i64 = ctx.query.from.id.0.try_into().unwrap();
+                let messages = ctx.bots.db.get_user_messages(user_id).await?;
+                let new_state = State::ViewingMessages {
+                    messages: messages.clone(),
+                    current_page: *back_page,
+                };
+                ctx.dialogue.update(new_state).await?;
+
+                // Обновите клавиатуру
+                let keyboard = all_messages(messages, *back_page);
+                if let Some(msg) = ctx.query.message.as_ref() {
+                    let msg = msg.regular_message().unwrap();
+                    ctx.bots.bot
+                        .edit_message_text(msg.chat.id, msg.id, "*Выберете:*")
+                        .parse_mode(ParseMode::MarkdownV2)
+                        .reply_markup(keyboard)
+                        .await?;
+                }
             }
         }
 
