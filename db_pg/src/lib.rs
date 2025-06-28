@@ -30,7 +30,7 @@ pub struct User {
     pub role: UserRole,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, Clone, FromRow)]
 pub struct Message {
     pub id: Uuid,
     pub telegram_id: i64,
