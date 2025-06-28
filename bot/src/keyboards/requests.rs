@@ -5,11 +5,12 @@ pub fn history() -> InlineKeyboardMarkup {
     let all = InlineKeyboardButton::callback("Все собщения", "all_requests");
     let answered = InlineKeyboardButton::callback("С ответом", "answered_requests");
     let accepted = InlineKeyboardButton::callback("Принятые", "accepted_requests");
+    let back_to_menu = InlineKeyboardButton::callback("⬅️", "back_to_menu");
 
     InlineKeyboardMarkup::default().append_row(vec![all]).append_row(vec![answered, accepted])
 }
 
-const ITEMS_PER_PAGE: usize = 10;
+pub const ITEMS_PER_PAGE: usize = 10;
 
 pub fn all_messages(messages: Vec<Message>, current_page: usize) -> InlineKeyboardMarkup {
     let total_pages = (messages.len().max(1) + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
@@ -43,7 +44,7 @@ pub fn all_messages(messages: Vec<Message>, current_page: usize) -> InlineKeyboa
     InlineKeyboardMarkup::new(rows)
 }
 
-fn create_navigation_row(current_page: usize, total_pages: usize) -> Vec<InlineKeyboardButton> {
+pub fn create_navigation_row(current_page: usize, total_pages: usize) -> Vec<InlineKeyboardButton> {
     let mut buttons = Vec::new();
     
     // Кнопка "Назад"
