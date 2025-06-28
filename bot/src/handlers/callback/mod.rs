@@ -6,7 +6,7 @@ use std::{collections::HashMap, sync::Arc};
 use logging::log_info;
 use teloxide::{payloads::{SendMessageSetters, SendPhotoSetters}, prelude::Requester, types::{CallbackQuery, InputFile, ParseMode}, utils::markdown::escape};
 use async_trait::async_trait;
-use crate::{handlers::callback::{faq::{FaqSend, Q1}, requests::{AllMessages, MyRequests}}, keyboards::{faqkb::faq, menu::menu}, state::State, types::{HandlerResult, MyDialogue}, TelegramBot};
+use crate::{handlers::callback::{faq::{FaqSend, Q1}, requests::{AllMessages, BackToPageHandler, MessageHandler, MyRequests}}, keyboards::{faqkb::faq, menu::menu}, state::State, types::{HandlerResult, MyDialogue}, TelegramBot};
 
 pub struct CallbackContext {
     pub bots: Arc<TelegramBot>,
@@ -72,6 +72,15 @@ impl CallbackHandlerFactory {
             "back_to_menu".to_string(),
             Arc::new(BackToMenu) as Arc<dyn CallbackHandler + Send + Sync>
         );
+        handlers.insert(
+            "msg_".to_string(), // Общая префикс-обработка для сообщений
+            Arc::new(MessageHandler) as Arc<dyn CallbackHandler + Send + Sync>
+        );
+
+        handlers.insert(
+            "back_to_page_".to_string(), // Общая префикс-обработка для кнопок возврата
+            Arc::new(BackToPageHandler) as Arc<dyn CallbackHandler + Send + Sync>
+        );
         // handlers.insert("back_to_faq".to_string(), Arc::new(BackToFaqHandler));
         // Добавляем другие обработчики
         
@@ -100,6 +109,22 @@ pub async fn callback_handler(
     if let Some(ref data) = ctx.query.data {
         if data.starts_with("page_") {
             if let Some(handler) = bots.callback_handlers.get_handler("all_requests") {
+                handler.handle(&ctx).await?;
+                return Ok(());
+            }
+        }
+
+        // Обработка отдельных сообщений
+        if data.starts_with("msg_") {
+            if let Some(handler) = bots.callback_handlers.get_handler("msg_") {
+                handler.handle(&ctx).await?;
+                return Ok(());
+            }
+        }
+
+        // Обработка возврата
+        if data.starts_with("back_to_page_") {
+            if let Some(handler) = bots.callback_handlers.get_handler("back_to_page_") {
                 handler.handle(&ctx).await?;
                 return Ok(());
             }
