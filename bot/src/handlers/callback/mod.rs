@@ -36,8 +36,13 @@ impl CallbackHandler for BackToMenu {
             "*{}* привет\nМы команда разработчиков *Axiowel*, занимаемся разработкой эффективного и отказоустойчевого программного обеспечения основоного на ИИ модели *Axiowel AI*\n\nНаш бот достататочно функционален, можете подробнее узнать в /faq",
             escape(&ctx.query.from.first_name)
         );
-        ctx.bots.bot.send_photo(ctx.query.from.id, image)
-            .caption(text)
+        // ctx.bots.bot.send_photo(ctx.query.from.id, image)
+        //     .caption(text)
+        //     .reply_markup(menu())
+        //     .parse_mode(ParseMode::MarkdownV2)
+        //     .await?;
+
+        ctx.bots.bot.send_message(ctx.query.from.id, text)
             .reply_markup(menu())
             .parse_mode(ParseMode::MarkdownV2)
             .await?;
