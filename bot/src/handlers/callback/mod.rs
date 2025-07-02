@@ -28,6 +28,8 @@ pub struct BackToMenu;
 #[async_trait]
 impl CallbackHandler for BackToMenu {
     async fn handle(&self, ctx: &CallbackContext) -> HandlerResult {
+        ctx.bots.bot.delete_message(ctx.query.from.id, ctx.query.message.clone().unwrap().regular_message().unwrap().id).await?;
+
         let path = concat!(env!("CARGO_MANIFEST_DIR"), "/static/aw_logo.png");
         let image = InputFile::file(path);
         let text = format!(
