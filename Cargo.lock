@@ -294,6 +294,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "teloxide",
+ "thiserror 2.0.12",
  "tokio",
  "tonic",
  "tracing",
