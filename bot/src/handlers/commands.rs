@@ -23,7 +23,7 @@ pub enum Commander {
 
 pub async fn command_handler(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg: Message, cmd: Commander) -> HandlerResult {
     let bot = &bots.bot;
-    if msg.chat.id.0 as u64 != msg.from.unwrap().id.0 {
+    if msg.chat.id.0 as u64 != msg.from.clone().unwrap().id.0 {
         log_info!("ChatId not eq UserId");
         return Ok(());
     }
