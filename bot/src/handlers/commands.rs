@@ -23,6 +23,10 @@ pub enum Commander {
 
 pub async fn command_handler(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg: Message, cmd: Commander) -> HandlerResult {
     let bot = &bots.bot;
+    if msg.chat.id.0 as u64 != msg.from.unwrap().id.0 {
+        log_info!("ChatId not eq UserId");
+        return Ok(());
+    }
     match cmd {
         Commander::Help => bot.send_message(msg.chat.id, Commander::descriptions().to_string()).await?,
         Commander::Start => {
@@ -65,11 +69,10 @@ pub async fn command_handler(bots: Arc<TelegramBot>, dialogue: MyDialogue, msg: 
                 "*{}* привет\nМы команда разработчиков *Axiowel*, занимаемся разработкой эффективного и отказоустойчевого программного обеспечения основоного на ИИ модели *Axiowel AI*\n\nНаш бот достататочно функционален, можете подробнее узнать в /faq",
                 escape(&msg.chat.first_name().unwrap_or(""))
             );
-            bot.send_photo(msg.chat.id, image)
-                .caption(text)
-                .reply_markup(menu())
+            bot.send_message(msg.chat.id, text)
                 .parse_mode(ParseMode::MarkdownV2)
-                .await?;
+                .reply_markup(menu())
+                .await;
 
             return Ok(());
         }
