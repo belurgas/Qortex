@@ -13,6 +13,7 @@ pub mod keyboards;
 mod handlers;
 pub mod state;
 pub mod types;
+mod error;
 
 pub struct TelegramBot {
     pub bot: MyBot,
